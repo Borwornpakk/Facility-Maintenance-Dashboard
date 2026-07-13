@@ -1,8 +1,3 @@
-# Facility Maintenance Dashboard (Prototype)
-**Stack:** Python (Pandas) for data generation/cleaning/KPI calc → CSV → Power BI for visualization
-
----
-
 ## Project Overview
 
 ### What is this project?
@@ -71,45 +66,7 @@ built this to demonstrate that I can:
 
 ---
 
-## 1. Project Structure
-
-```
-facility-maintenance-dashboard/
-├── scripts/
-│   ├── 01_generate_data.py   # สร้าง synthetic dataset (dim + fact tables)
-│   └── 02_etl_kpi.py         # clean data + คำนวณ KPI ทุกหน้า -> CSV
-├── data/                      # output CSV ทั้งหมด (import เข้า Power BI ตรงนี้)
-└── powerbi/                   # เก็บไฟล์ .pbix ที่คุณสร้างต่อใน Power BI Desktop
-```
-
-Dataset ที่สร้าง: **100 Assets, 500 Work Orders, 20 Vendors, 10 Technicians, 5 Buildings**
-(ปรับ seed/จำนวนได้ที่ต้นสคริปต์ `01_generate_data.py`)
-
----
-
-## 2. Data Model (Star Schema) สำหรับ Power BI
-
-```
-                dim_buildings ─┐
-                                ├──< fact_workorders >──┐
-dim_assets ────────────────────┘                        ├── dim_technicians
-                                                          └── dim_vendors
-dim_budget ── (BuildingID + Month) ── budget_vs_actual.csv (pre-joined)
-```
-
-**ขั้นตอนใน Power BI Desktop:**
-1. `Get Data → Text/CSV` → import ทุกไฟล์ใน `data/`
-2. ไปที่ **Model view** สร้างความสัมพันธ์ (relationships):
-   - `dim_assets[AssetID]` 1 → * `fact_workorders[AssetID]`
-   - `dim_buildings[BuildingID]` 1 → * `dim_assets[BuildingID]`
-   - `dim_buildings[BuildingID]` 1 → * `fact_workorders[BuildingID]`
-   - `dim_technicians[TechnicianID]` 1 → * `fact_workorders[TechnicianID]`
-   - `dim_vendors[VendorID]` 1 → * `fact_workorders[VendorID]`
-3. ตารางที่ผมคำนวณ KPI ไว้ล่วงหน้าแล้ว (เช่น `kpi_executive_summary.csv`, `technician_performance.csv`) **ไม่ต้อง join กับอะไร** — ใช้เป็น standalone table ลาก field ขึ้น card/chart ได้เลย เพื่อลดจำนวน DAX ที่ต้องเขียนเอง (ตามที่ขอไว้ว่า Python จัดการ KPI ให้เสร็จ)
-
----
-
-## 3. Page-by-Page Design
+## Page-by-Page Design
 
 ### Page 1 — Executive Dashboard
 Source: `kpi_executive_summary.csv` (single row) + `kpi_monthly_trend.csv`
@@ -180,12 +137,3 @@ Source: `risk_dashboard.csv`, `risk_heatmap.csv`
 | Asset Availability % | 1 − (total downtime hours ÷ total possible operating hours ในช่วงวิเคราะห์) |
 | Overdue WO | WO ที่ยังไม่ Closed และเลย DueDate |
 
----
-
-## 5. Next Steps
-1. เปิด Power BI Desktop → import ไฟล์ทั้งหมดใน `data/`
-2. สร้างความสัมพันธ์ตาม data model ด้านบน
-3. สร้าง 5 หน้าตาม mapping ข้างต้น → save เป็น `powerbi/Facility-Maintenance-Dashboard.pbix`
-4. (ถ้าต้องการ refresh ข้อมูลใหม่) รัน `python3 01_generate_data.py && python3 02_etl_kpi.py` แล้วกด Refresh ใน Power BI
-
-> ต้องการ dataset ที่สมจริงขึ้น (เช่น seasonal failure pattern, cost inflation ตามปี) หรืออยากให้ผมช่วยเขียน DAX measure เพิ่มเติม (time intelligence, YoY) บอกได้เลยครับ
