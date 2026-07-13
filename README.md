@@ -121,11 +121,8 @@ Dataset: **100 Assets, 500 Work Orders, 20 Vendors, 10 Technicians, 5 Buildings*
 
 ## 2. Data Model (Star Schema) สำหรับ Power BI
 
-```bash
-git add images/
-git commit -m "add images for README"
-git push origin main
- 
+```
+![image_URL](https://github.com/Borwornpakk/Facility-Maintenance-Dashboard/blob/main/DataModel.jpg?raw=true)
 ```
 
 ## 3. Page-by-Page Design
