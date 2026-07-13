@@ -129,18 +129,6 @@ dim_assets ────────────────────┘      
 dim_budget ── (BuildingID + Month) ── budget_vs_actual.csv (pre-joined)
 ```
 
-**ขั้นตอนใน Power BI Desktop:**
-1. `Get Data → Text/CSV` → import ทุกไฟล์ใน `data/`
-2. ไปที่ **Model view** สร้างความสัมพันธ์ (relationships):
-   - `dim_assets[AssetID]` 1 → * `fact_workorders[AssetID]`
-   - `dim_buildings[BuildingID]` 1 → * `dim_assets[BuildingID]`
-   - `dim_buildings[BuildingID]` 1 → * `fact_workorders[BuildingID]`
-   - `dim_technicians[TechnicianID]` 1 → * `fact_workorders[TechnicianID]`
-   - `dim_vendors[VendorID]` 1 → * `fact_workorders[VendorID]`
-3. ตารางที่ผมคำนวณ KPI ไว้ล่วงหน้าแล้ว (เช่น `kpi_executive_summary.csv`, `technician_performance.csv`) **ไม่ต้อง join กับอะไร** — ใช้เป็น standalone table ลาก field ขึ้น card/chart ได้เลย เพื่อลดจำนวน DAX ที่ต้องเขียนเอง (ตามที่ขอไว้ว่า Python จัดการ KPI ให้เสร็จ)
-
----
-
 ## 3. Page-by-Page Design
 
 ### Page 1 — Executive Dashboard
