@@ -64,7 +64,168 @@ built this to demonstrate that I can:
   Risk page exists to flag which assets need capex attention now) rather
   than picking visuals first and fitting data to them.
 
+## How the Synthetic Dataset Was Generated
+
+No real building data was available, so this project uses **Python**
+(`pandas`, `numpy`, `random`) to generate a synthetic-but-realistic
+facility maintenance dataset.
+
+1. **Define target volume** — the scale was fixed upfront: 5 Buildings,
+   20 Vendors, 10 Technicians, 100 Assets (7 types), 500 Work Orders
+   (PM / CM / Emergency) — enough volume to make KPIs and charts
+   meaningful without being unrealistically large.
+
+2. **Build dimension tables first** — Buildings, Vendors, Technicians,
+   and Assets are generated as independent tables, each with realistic
+   attributes (e.g., expected lifespan per asset type, vendor service
+   type, technician specialty).
+
+3. **Generate the Work Order fact table** — each of the 500 Work Orders
+   is created by randomly linking to an Asset, Technician, and Vendor,
+   then assigning type, status, cost, and timestamps using **weighted**
+   random distributions instead of pure uniform randomness. For example,
+   55% of work orders are Preventive Maintenance (PM) to reflect
+   realistic maintenance practice, and repair times follow an
+   **exponential distribution** to mimic the real-world pattern of "most
+   repairs are fast, a few take much longer."
+
+4. **Add realistic constraints** — rules keep the data logically
+   consistent: a Work Order can't be "Closed" before enough time has
+   passed, overdue status is derived from due dates based on urgency
+   (Emergency = 3 days, CM = 14 days, PM = 30 days), and Chiller/AHU
+   failures are weighted toward Thailand's hot season (Mar–May).
+
+5. **Export to CSV** — all tables are exported to `/data` as a **star
+   schema** (dimension + fact tables), ready to import into Power BI and
+   relate via `AssetID`, `BuildingID`, `VendorID`, and `TechnicianID`.
+
+A fixed random seed (`42`) makes the dataset reproducible — re-running
+`scripts/01_generate_data.py` produces the same data every time.
+
 ---
+
+## 1. Project Structure
+
+```
+facility-maintenance-dashboard/
+├── scripts/
+│   ├── 01_generate_data.py   # create synthetic dataset (dim + fact tables)
+│   └── 02_etl_kpi.py         # clean data + calculate KPI all pages -> CSV
+├── data/                     # all output CSV (import to Power BI)
+└── powerbi/                  
+```
+
+Dataset ที่สร้าง: **100 Assets, 500 Work Orders, 20 Vendors, 10 Technicians, 5 Buildings**
+
+---
+
+## 2. Data Model (Star Schema) สำหรับ Power BI
+
+```
+                dim_buildings ─┐
+                                ├──< fact_workorders >──┐
+dim_assets ────────────────────┘                        ├── dim_technicians
+                                                          └── dim_vendors
+dim_budget ── (BuildingID + Month) ── budget_vs_actual.csv (pre-joined)
+```
+
+**ขั้นตอนใน Power BI Desktop:**
+1. `Get Data → Text/CSV` → import ทุกไฟล์ใน `data/`
+2. ไปที่ **Model view** สร้างความสัมพันธ์ (relationships):
+   - `dim_assets[AssetID]` 1 → * `fact_workorders[AssetID]`
+   - `dim_buildings[BuildingID]` 1 → * `dim_assets[BuildingID]`
+   - `dim_buildings[BuildingID]` 1 → * `fact_workorders[BuildingID]`
+   - `dim_technicians[TechnicianID]` 1 → * `fact_workorders[TechnicianID]`
+   - `dim_vendors[VendorID]` 1 → * `fact_workorders[VendorID]`
+3. ตารางที่ผมคำนวณ KPI ไว้ล่วงหน้าแล้ว (เช่น `kpi_executive_summary.csv`, `technician_performance.csv`) **ไม่ต้อง join กับอะไร** — ใช้เป็น standalone table ลาก field ขึ้น card/chart ได้เลย เพื่อลดจำนวน DAX ที่ต้องเขียนเอง (ตามที่ขอไว้ว่า Python จัดการ KPI ให้เสร็จ)
+
+---
+
+## 3. Page-by-Page Design
+
+### Page 1 — Executive Dashboard
+Source: `kpi_executive_summary.csv` (single row) + `kpi_monthly_trend.csv`
+
+| Visual | Field |
+|---|---|
+| 9x Card | Total Assets, Active WO, PM Completion %, CM %, Availability %, MTTR, MTBF, Cost Total, Overdue WO |
+| Line chart | `kpi_monthly_trend`: Month (x) vs WorkOrderCount / TotalCost / PM_Completion_Pct |
+| KPI conditional formatting | ตั้ง data bar/สีแดง-เขียวบน card ที่ Overdue WO และ Availability % |
+
+Optional DAX (ถ้าอยากทำ dynamic filter ตามช่วงเวลาแทนค่าตายตัวจาก Python):
+```DAX
+MTTR (dynamic) = AVERAGEX(FILTER(fact_workorders, fact_workorders[Status]="Closed" && fact_workorders[WOType] IN {"CM","Emergency"}), fact_workorders[RepairTimeHours])
+```
+
+### Page 2 — Asset Lifecycle
+Source: `asset_lifecycle.csv`
+
+| Visual | Field |
+|---|---|
+| Slicer (buttons) | AssetType = AHU / Pump / Chiller / Lighting / Generator / Fire Pump / UPS |
+| Table/Matrix | AssetID, InstallationDate, RemainingLifeYears, CurrentCondition, RiskLevel, PlannedReplacementDate |
+| Gauge or bar | RemainingLifeYears vs ExpectedLifeYears ต่อ Asset |
+| Scatter | AgeYears (x) vs RemainingLifeYears (y), สีตาม RiskLevel |
+
+### Page 3 — Work Order Dashboard
+Source: `workorder_status_summary.csv`, `technician_performance.csv`, `vendor_performance.csv`
+
+| Visual | Field |
+|---|---|
+| Donut/Stacked bar | Status: Open / In Progress / Closed |
+| Stacked bar | WOType: PM / CM / Emergency |
+| Card | Avg(ResponseTimeHours), Avg(RepairTimeHours) จาก `fact_workorders` |
+| Table | `technician_performance`: WorkOrdersHandled, AvgResponseTimeHours, AvgResolutionTimeHours |
+| Table + bar | `vendor_performance`: WorkOrdersHandled, AvgCost, Rating |
+
+### Page 4 — Maintenance Cost
+Source: `cost_by_building.csv`, `cost_by_asset_type.csv`, `cost_by_vendor.csv`, `budget_vs_actual.csv`
+
+| Visual | Field |
+|---|---|
+| Bar chart | Cost by BuildingName |
+| Bar/Treemap | Cost by AssetType |
+| Bar chart | Cost by VendorName |
+| Combo chart (clustered column + line) | `budget_vs_actual`: Month (x), BudgetAmount (column), ActualCost (line), แยกตาม BuildingName |
+
+### Page 5 — Risk Dashboard
+Source: `risk_dashboard.csv`, `risk_heatmap.csv`
+
+| Visual | Field |
+|---|---|
+| Card | Count of RiskLevel = "Critical" |
+| Table | Overdue PM: filter `IsOverduePM = TRUE` |
+| Table | High Risk Equipment: filter `RiskLevel IN {High, Critical}` |
+| Table | Repeated Failures: filter `RepeatedFailureFlag = TRUE`, แสดง FailureCount |
+| Matrix + conditional formatting (heatmap) | `risk_heatmap.csv`: rows=BuildingName, columns=AssetType, values=AvgRiskScore → ใช้ background color scale (เขียว→แดง) |
+
+---
+
+## 4. KPI Formulas (คำนวณไว้แล้วใน `02_etl_kpi.py`)
+
+| KPI | สูตร |
+|---|---|
+| PM Completion % | closed PM WO ÷ total PM WO × 100 |
+| CM % | CM WO count ÷ total WO count × 100 |
+| MTTR | mean(RepairTimeHours) ของ WO ที่ Closed และเป็น CM/Emergency |
+| MTBF | mean(operating hours ÷ จำนวน failure) ต่อ asset ที่เคย fail |
+| Asset Availability % | 1 − (total downtime hours ÷ total possible operating hours ในช่วงวิเคราะห์) |
+| Overdue WO | WO ที่ยังไม่ Closed และเลย DueDate |
+
+---
+
+## 5. Next Steps
+1. เปิด Power BI Desktop → import ไฟล์ทั้งหมดใน `data/`
+2. สร้างความสัมพันธ์ตาม data model ด้านบน
+3. สร้าง 5 หน้าตาม mapping ข้างต้น → save เป็น `powerbi/Facility-Maintenance-Dashboard.pbix`
+4. (ถ้าต้องการ refresh ข้อมูลใหม่) รัน `python3 01_generate_data.py && python3 02_etl_kpi.py` แล้วกด Refresh ใน Power BI
+
+> ต้องการ dataset ที่สมจริงขึ้น (เช่น seasonal failure pattern, cost inflation ตามปี) หรืออยากให้ผมช่วยเขียน DAX measure เพิ่มเติม (time intelligence, YoY) บอกได้เลยครับ
+
+
+
+
+[README (1).md](https://github.com/user-attachments/files/29966059/README.1.md)
 
 ## Page-by-Page Design
 
