@@ -119,7 +119,7 @@ Dataset: **100 Assets, 500 Work Orders, 20 Vendors, 10 Technicians, 5 Buildings*
 
 ---
 
-## 2. Data Model (Star Schema) สำหรับ Power BI
+## 2. Data Model (Star Schema)
 
 <img width="774" height="604" alt="DataModel" src="https://github.com/user-attachments/assets/1f81e827-7e34-4a9e-bede-37450bae89d4"/>
 
