@@ -115,18 +115,17 @@ facility-maintenance-dashboard/
 └── powerbi/                  
 ```
 
-Dataset ที่สร้าง: **100 Assets, 500 Work Orders, 20 Vendors, 10 Technicians, 5 Buildings**
+Dataset: **100 Assets, 500 Work Orders, 20 Vendors, 10 Technicians, 5 Buildings**
 
 ---
 
 ## 2. Data Model (Star Schema) สำหรับ Power BI
 
-```
-                dim_buildings ─┐
-                                ├──< fact_workorders >──┐
-dim_assets ────────────────────┘                        ├── dim_technicians
-                                                          └── dim_vendors
-dim_budget ── (BuildingID + Month) ── budget_vs_actual.csv (pre-joined)
+```bash
+git add images/
+git commit -m "add images for README"
+git push origin main
+ 
 ```
 
 ## 3. Page-by-Page Design
@@ -203,86 +202,6 @@ Source: `risk_dashboard.csv`, `risk_heatmap.csv`
 ---
 
 ## 5. Next Steps
-1. เปิด Power BI Desktop → import ไฟล์ทั้งหมดใน `data/`
-2. สร้างความสัมพันธ์ตาม data model ด้านบน
+
 3. สร้าง 5 หน้าตาม mapping ข้างต้น → save เป็น `powerbi/Facility-Maintenance-Dashboard.pbix`
 4. (ถ้าต้องการ refresh ข้อมูลใหม่) รัน `python3 01_generate_data.py && python3 02_etl_kpi.py` แล้วกด Refresh ใน Power BI
-
-> ต้องการ dataset ที่สมจริงขึ้น (เช่น seasonal failure pattern, cost inflation ตามปี) หรืออยากให้ผมช่วยเขียน DAX measure เพิ่มเติม (time intelligence, YoY) บอกได้เลยครับ
-
-
-
-
-[README (1).md](https://github.com/user-attachments/files/29966059/README.1.md)
-
-## Page-by-Page Design
-
-### Page 1 — Executive Dashboard
-Source: `kpi_executive_summary.csv` (single row) + `kpi_monthly_trend.csv`
-
-| Visual | Field |
-|---|---|
-| 9x Card | Total Assets, Active WO, PM Completion %, CM %, Availability %, MTTR, MTBF, Cost Total, Overdue WO |
-| Line chart | `kpi_monthly_trend`: Month (x) vs WorkOrderCount / TotalCost / PM_Completion_Pct |
-| KPI conditional formatting | ตั้ง data bar/สีแดง-เขียวบน card ที่ Overdue WO และ Availability % |
-
-Optional DAX (ถ้าอยากทำ dynamic filter ตามช่วงเวลาแทนค่าตายตัวจาก Python):
-```DAX
-MTTR (dynamic) = AVERAGEX(FILTER(fact_workorders, fact_workorders[Status]="Closed" && fact_workorders[WOType] IN {"CM","Emergency"}), fact_workorders[RepairTimeHours])
-```
-
-### Page 2 — Asset Lifecycle
-Source: `asset_lifecycle.csv`
-
-| Visual | Field |
-|---|---|
-| Slicer (buttons) | AssetType = AHU / Pump / Chiller / Lighting / Generator / Fire Pump / UPS |
-| Table/Matrix | AssetID, InstallationDate, RemainingLifeYears, CurrentCondition, RiskLevel, PlannedReplacementDate |
-| Gauge or bar | RemainingLifeYears vs ExpectedLifeYears ต่อ Asset |
-| Scatter | AgeYears (x) vs RemainingLifeYears (y), สีตาม RiskLevel |
-
-### Page 3 — Work Order Dashboard
-Source: `workorder_status_summary.csv`, `technician_performance.csv`, `vendor_performance.csv`
-
-| Visual | Field |
-|---|---|
-| Donut/Stacked bar | Status: Open / In Progress / Closed |
-| Stacked bar | WOType: PM / CM / Emergency |
-| Card | Avg(ResponseTimeHours), Avg(RepairTimeHours) จาก `fact_workorders` |
-| Table | `technician_performance`: WorkOrdersHandled, AvgResponseTimeHours, AvgResolutionTimeHours |
-| Table + bar | `vendor_performance`: WorkOrdersHandled, AvgCost, Rating |
-
-### Page 4 — Maintenance Cost
-Source: `cost_by_building.csv`, `cost_by_asset_type.csv`, `cost_by_vendor.csv`, `budget_vs_actual.csv`
-
-| Visual | Field |
-|---|---|
-| Bar chart | Cost by BuildingName |
-| Bar/Treemap | Cost by AssetType |
-| Bar chart | Cost by VendorName |
-| Combo chart (clustered column + line) | `budget_vs_actual`: Month (x), BudgetAmount (column), ActualCost (line), แยกตาม BuildingName |
-
-### Page 5 — Risk Dashboard
-Source: `risk_dashboard.csv`, `risk_heatmap.csv`
-
-| Visual | Field |
-|---|---|
-| Card | Count of RiskLevel = "Critical" |
-| Table | Overdue PM: filter `IsOverduePM = TRUE` |
-| Table | High Risk Equipment: filter `RiskLevel IN {High, Critical}` |
-| Table | Repeated Failures: filter `RepeatedFailureFlag = TRUE`, แสดง FailureCount |
-| Matrix + conditional formatting (heatmap) | `risk_heatmap.csv`: rows=BuildingName, columns=AssetType, values=AvgRiskScore → ใช้ background color scale (เขียว→แดง) |
-
----
-
-## 4. KPI Formulas (คำนวณไว้แล้วใน `02_etl_kpi.py`)
-
-| KPI | สูตร |
-|---|---|
-| PM Completion % | closed PM WO ÷ total PM WO × 100 |
-| CM % | CM WO count ÷ total WO count × 100 |
-| MTTR | mean(RepairTimeHours) ของ WO ที่ Closed และเป็น CM/Emergency |
-| MTBF | mean(operating hours ÷ จำนวน failure) ต่อ asset ที่เคย fail |
-| Asset Availability % | 1 − (total downtime hours ÷ total possible operating hours ในช่วงวิเคราะห์) |
-| Overdue WO | WO ที่ยังไม่ Closed และเลย DueDate |
-
