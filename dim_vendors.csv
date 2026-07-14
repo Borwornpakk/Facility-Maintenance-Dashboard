@@ -1,0 +1,21 @@
+VendorID,ServiceType,VendorName,Rating,ContractStartDate
+VEN-01,General,Central General Services,3.7,2022-04-15
+VEN-02,HVAC,Metro HVAC Services,4.9,2022-04-05
+VEN-03,HVAC,Delta HVAC Services,4.5,2023-01-25
+VEN-04,General,Siam General Services,4.2,2022-04-10
+VEN-05,Fire Safety,Metro Fire Safety Services,3.3,2023-01-03
+VEN-06,Electrical,Central Electrical Services,3.3,2022-12-19
+VEN-07,Electrical,Metro Electrical Services,3.1,2023-09-11
+VEN-08,Electrical,Premier Electrical Services,4.7,2022-09-28
+VEN-09,General,Central General Services,4.2,2022-02-14
+VEN-10,HVAC,Best HVAC Services,4.4,2023-04-16
+VEN-11,General,Delta General Services,3.0,2023-07-04
+VEN-12,General,National General Services,4.9,2022-05-08
+VEN-13,Mechanical,Siam Mechanical Services,4.7,2023-01-23
+VEN-14,HVAC,Asia HVAC Services,3.4,2022-03-22
+VEN-15,Mechanical,Premier Mechanical Services,3.4,2023-07-20
+VEN-16,Power/UPS,Union Power/UPS Services,3.4,2022-10-28
+VEN-17,HVAC,National HVAC Services,3.6,2023-10-06
+VEN-18,HVAC,Asia HVAC Services,4.0,2023-09-26
+VEN-19,HVAC,Central HVAC Services,3.9,2023-01-06
+VEN-20,Electrical,Union Electrical Services,3.6,2023-08-15
