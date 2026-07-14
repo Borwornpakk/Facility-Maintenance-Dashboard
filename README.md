@@ -135,7 +135,6 @@ Source: `kpi_executive_summary.csv` (single row) + `kpi_monthly_trend.csv`
 | Line chart | `kpi_monthly_trend`: Month (x) vs WorkOrderCount / TotalCost / PM_Completion_Pct |
 | KPI conditional formatting | ตั้ง data bar/สีแดง-เขียวบน card ที่ Overdue WO และ Availability % |
 
-```
 
 ### Page 2 — Asset Lifecycle
 Source: `asset_lifecycle.csv`
