@@ -135,9 +135,6 @@ Source: `kpi_executive_summary.csv` (single row) + `kpi_monthly_trend.csv`
 | Line chart | `kpi_monthly_trend`: Month (x) vs WorkOrderCount / TotalCost / PM_Completion_Pct |
 | KPI conditional formatting | ตั้ง data bar/สีแดง-เขียวบน card ที่ Overdue WO และ Availability % |
 
-Optional DAX (ถ้าอยากทำ dynamic filter ตามช่วงเวลาแทนค่าตายตัวจาก Python):
-```DAX
-MTTR (dynamic) = AVERAGEX(FILTER(fact_workorders, fact_workorders[Status]="Closed" && fact_workorders[WOType] IN {"CM","Emergency"}), fact_workorders[RepairTimeHours])
 ```
 
 ### Page 2 — Asset Lifecycle
@@ -184,7 +181,7 @@ Source: `risk_dashboard.csv`, `risk_heatmap.csv`
 
 ---
 
-## 4. KPI Formulas (คำนวณไว้แล้วใน `02_etl_kpi.py`)
+## 4. KPI Formulas 
 
 | KPI | สูตร |
 |---|---|
@@ -196,8 +193,3 @@ Source: `risk_dashboard.csv`, `risk_heatmap.csv`
 | Overdue WO | WO ที่ยังไม่ Closed และเลย DueDate |
 
 ---
-
-## 5. Next Steps
-
-3. สร้าง 5 หน้าตาม mapping ข้างต้น → save เป็น `powerbi/Facility-Maintenance-Dashboard.pbix`
-4. (ถ้าต้องการ refresh ข้อมูลใหม่) รัน `python3 01_generate_data.py && python3 02_etl_kpi.py` แล้วกด Refresh ใน Power BI
